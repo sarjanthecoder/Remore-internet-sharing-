@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="icon" href="/static/logo.png" type="image/x-icon">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remote SIM Data Sharing | Share Data, Not Location</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1d3a 50%, #0f1428 100%);
+            color: #fff;
+            overflow-x: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+
+        /* Glassmorphism Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            padding: 20px 50px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #00d4ff, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 30px rgba(0, 212, 255, 0.5);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 40px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: #fff;
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .nav-links a:hover {
+            color: #00d4ff;
+            text-shadow: 0 0 20px rgba(0, 212, 255, 0.8);
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding-top: 80px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .user-location {
+            position: relative;
+            padding: 60px;
+            min-height: 500px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .user-a {
+            background: radial-gradient(circle at center, rgba(0, 123, 255, 0.2) 0%, transparent 70%);
+        }
+
+        .user-b {
+            background: radial-gradient(circle at center, rgba(34, 197, 94, 0.2) 0%, transparent 70%);
+        }
+
+        .location-dot {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            position: relative;
+            animation: pulse 2s infinite;
+        }
+
+        .dot-a {
+            background: radial-gradient(circle, #00d4ff, #007bff);
+            box-shadow: 0 0 40px rgba(0, 212, 255, 0.8), 0 0 80px rgba(0, 212, 255, 0.4);
+        }
+
+        .dot-b {
+            background: radial-gradient(circle, #22c55e, #16a34a);
+            box-shadow: 0 0 40px rgba(34, 197, 94, 0.8), 0 0 80px rgba(34, 197, 94, 0.4);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.8; }
+        }
+
+        .location-label {
+            margin-top: 30px;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .status-badge {
+            margin-top: 20px;
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            font-size: 14px;
+            animation: fadeInUp 1s ease;
+        }
+
+        /* Central Data Stream */
+        .data-stream-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 400px;
+            height: 200px;
+            z-index: 10;
+        }
+
+        .data-stream {
+            position: absolute;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, #00d4ff, #8b5cf6, #00d4ff);
+            background-size: 200% 100%;
+            animation: streamFlow 3s linear infinite;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.8), 0 0 40px rgba(139, 92, 246, 0.6);
+            top: 50%;
+        }
+
+        @keyframes streamFlow {
+            0% { background-position: 0% 50%; }
+            100% { background-position: 200% 50%; }
+        }
+
+        .data-packet {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #00d4ff;
+            border-radius: 50%;
+            box-shadow: 0 0 15px rgba(0, 212, 255, 1);
+            animation: packetMove 2s linear infinite;
+        }
+
+        @keyframes packetMove {
+            0% { left: 0; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { left: 100%; opacity: 0; }
+        }
+
+        .hero-cta {
+            position: absolute;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 20;
+        }
+
+        .hero-cta h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #00d4ff, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: fadeInUp 1s ease;
+        }
+
+        /* Neumorphic Button */
+        .cta-button {
+            padding: 18px 48px;
+            font-size: 18px;
+            border: none;
+            border-radius: 50px;
+            background: linear-gradient(145deg, #1e2139, #0f1428);
+            box-shadow: 8px 8px 16px #070913, -8px -8px 16px #252945;
+            color: #00d4ff;
+            cursor: pointer;
+            transition: all 0.3s;
+            animation: fadeInUp 1.2s ease;
+        }
+
+        .cta-button:hover {
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.6);
+            transform: translateY(-2px);
+        }
+
+        /* Explanation Panels */
+        .explanation-section {
+            padding: 100px 50px;
+            position: relative;
+        }
+
+        .panel {
+            max-width: 1200px;
+            margin: 0 auto 100px;
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 30px;
+            padding: 60px;
+            opacity: 0;
+            transform: translateY(50px);
+            transition: all 0.8s;
+        }
+
+        .panel.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .panel-number {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #00d4ff, #8b5cf6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            font-weight: bold;
+            box-shadow: 0 0 40px rgba(0, 212, 255, 0.6);
+        }
+
+        .panel h2 {
+            font-size: 36px;
+            background: linear-gradient(135deg, #00d4ff, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .panel-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: center;
+        }
+
+        .phone-mockup {
+            width: 280px;
+            height: 560px;
+            background: linear-gradient(145deg, #1a1d3a, #0f1428);
+            border-radius: 40px;
+            border: 8px solid #2a2d4a;
+            padding: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(0, 212, 255, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .phone-screen {
+            width: 100%;
+            height: 100%;
+            background: #0a0e27;
+            border-radius: 30px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 30px;
+        }
+
+        .notification {
+            width: 100%;
+            padding: 20px;
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 20px;
+            margin-bottom: 20px;
+        }
+
+        .data-viz {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00d4ff, #8b5cf6);
+            width: 0;
+            transition: width 2s ease;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.8);
+        }
+
+        .panel.visible .progress-fill {
+            width: 50%;
+        }
+
+        .data-counter {
+            font-size: 48px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #00d4ff, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Holographic Effect */
+        .hologram {
+            position: relative;
+            animation: hologramGlow 3s infinite;
+        }
+
+        @keyframes hologramGlow {
+            0%, 100% { filter: hue-rotate(0deg); }
+            50% { filter: hue-rotate(30deg); }
+        }
+
+        /* Footer */
+        footer {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(20px);
+            padding: 60px 50px;
+            text-align: center;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .social-icons {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 30px;
+        }
+
+        .social-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .social-icon:hover {
+            background: rgba(0, 212, 255, 0.2);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.6);
+            transform: translateY(-5px);
+        }
+
+        /* Data Selection Buttons */
+        .data-option {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(0, 212, 255, 0.3);
+            border-radius: 15px;
+            color: #fff;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .data-option:hover {
+            background: rgba(0, 212, 255, 0.2);
+            border-color: #00d4ff;
+            transform: scale(1.05);
+        }
+
+        .data-option.active {
+            background: linear-gradient(135deg, #00d4ff, #8b5cf6);
+            border-color: transparent;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.6);
+        }
+
+        /* Custom Range Slider */
+        .custom-range {
+            margin-top: 15px;
+        }
+
+        .range-slider {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #00d4ff, #8b5cf6);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.8);
+            transition: all 0.3s;
+        }
+
+        .range-slider::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 30px rgba(0, 212, 255, 1);
+        }
+
+        .range-slider::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #00d4ff, #8b5cf6);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.8);
+            border: none;
+        }
+
+        .request-btn {
+            transition: all 0.3s;
+        }
+
+        .request-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.5);
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .distance-badge {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 10px 20px;
+            background: rgba(139, 92, 246, 0.9);
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 0 30px rgba(139, 92, 246, 0.8);
+            z-index: 15;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="logo">RemoteSIM</div>
+        <ul class="nav-links">
+            <li><a href="#how">How it Works</a></li>
+            
+        </ul>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-grid">
+            <div class="user-location user-a">
+                <div class="location-dot dot-a"></div>
+                <div class="location-label">User A</div>
+                <div class="status-badge">📤 Request Sent</div>
+            </div>
+            <div class="user-location user-b">
+                <div class="location-dot dot-b"></div>
+                <div class="location-label">User B</div>
+                <div class="status-badge">✅ Request Accepted</div>
+            </div>
+        </div>
+
+        <div class="data-stream-container">
+            <div class="data-stream">
+                <div class="data-packet" style="animation-delay: 0s;"></div>
+                <div class="data-packet" style="animation-delay: 0.5s;"></div>
+                <div class="data-packet" style="animation-delay: 1s;"></div>
+                <div class="data-packet" style="animation-delay: 1.5s;"></div>
+            </div>
+            <div class="distance-badge">500 km</div>
+        </div>
+
+        <div class="hero-cta">
+            <h1>Share Data, Not Location. Effortlessly.</h1>
+            <button class="cta-button">Learn More</button>
+        </div>
+    </section>
+
+    <!-- Explanation Panels -->
+    <section class="explanation-section" id="how">
+        <!-- Panel 1: User A Requests -->
+        <div class="panel" data-panel="1">
+            <div class="panel-header">
+                <div class="panel-number">1</div>
+                <h2>User A Requests</h2>
+            </div>
+            <div class="panel-content">
+                <div class="phone-mockup">
+                    <div class="phone-screen">
+                        <div class="notification">
+                            <p style="font-size: 16px; margin-bottom: 15px;">📱 Select Data Amount</p>
+                            <div style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">
+                                <button class="data-option active" data-amount="5">5GB</button>
+                                <button class="data-option" data-amount="10">10GB</button>
+                                <button class="data-option" data-amount="unlimited">∞ Unlimited</button>
+                            </div>
+                            <div class="custom-range">
+                                <input type="range" min="1" max="50" value="5" class="range-slider" id="customRange">
+                                <p style="color: #00d4ff; font-size: 20px; font-weight: bold; margin-top: 10px;">
+                                    <span id="rangeValue">5</span>GB Custom
+                                </p>
+                            </div>
+                        </div>
+                        <button class="request-btn" style="width: 100%; padding: 15px; background: linear-gradient(135deg, #00d4ff, #8b5cf6); border: none; border-radius: 15px; color: white; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px;">Send Request</button>
+                    </div>
+                </div>
+                <div>
+                    <h3 style="font-size: 28px; margin-bottom: 20px;">Simple Request Process</h3>
+                    <p style="font-size: 18px; line-height: 1.8; opacity: 0.8;">
+                        User A initiates a data sharing request remotely. The system automatically identifies User B's available data and sends an instant notification requesting 5GB of data allocation.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel 2: User B Accepts -->
+        <div class="panel" data-panel="2">
+            <div class="panel-header">
+                <div class="panel-number">2</div>
+                <h2>User B Accepts</h2>
+            </div>
+            <div class="panel-content">
+                <div>
+                    <h3 style="font-size: 28px; margin-bottom: 20px;">One-Tap Approval</h3>
+                    <p style="font-size: 18px; line-height: 1.8; opacity: 0.8;">
+                        User B receives the request instantly and can approve with a single tap. The secure authentication ensures both parties maintain control over their data sharing preferences.
+                    </p>
+                </div>
+                <div class="phone-mockup">
+                    <div class="phone-screen">
+                        <div class="notification" style="background: rgba(34, 197, 94, 0.1); border-color: rgba(34, 197, 94, 0.3);">
+                            <p style="font-size: 18px; margin-bottom: 10px;">✅ Request Approved</p>
+                            <p style="color: #22c55e; font-size: 24px; font-weight: bold;">5GB Shared</p>
+                        </div>
+                        <p style="opacity: 0.7;">Connection established!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel 3: Instant Access -->
+        <div class="panel" data-panel="3">
+            <div class="panel-header">
+                <div class="panel-number">3</div>
+                <h2>Instant Access</h2>
+            </div>
+            <div class="panel-content">
+                <div class="phone-mockup">
+                    <div class="phone-screen">
+                        <div style="text-align: center;">
+                            <div style="font-size: 72px; margin-bottom: 20px;">🌐</div>
+                            <p style="color: #00d4ff; font-size: 32px; font-weight: bold; margin-bottom: 10px;">Connected!</p>
+                            <p style="font-size: 18px; opacity: 0.8;">Using shared data</p>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h3 style="font-size: 28px; margin-bottom: 20px;">Immediate Connectivity</h3>
+                    <p style="font-size: 18px; line-height: 1.8; opacity: 0.8;">
+                        User A gains instant internet access using the shared data allocation. The connection is seamless, secure, and performs exactly like their own data plan would.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel 4: Data Deduction -->
+        <div class="panel hologram" data-panel="4">
+            <div class="panel-header">
+                <div class="panel-number">4</div>
+                <h2>Data Deduction</h2>
+            </div>
+            <div class="panel-content">
+                <div>
+                    <h3 style="font-size: 28px; margin-bottom: 20px;">Transparent Tracking</h3>
+                    <p style="font-size: 18px; line-height: 1.8; opacity: 0.8;">
+                        Real-time monitoring shows exactly how much data is being used. User B's data plan is deducted accurately, with full transparency and detailed usage logs.
+                    </p>
+                </div>
+                <div class="data-viz">
+                    <div style="text-align: center; margin-bottom: 30px;">
+                        <div class="data-counter">10GB → 5GB</div>
+                        <p style="margin-top: 10px; opacity: 0.7;">User B's Remaining Data</p>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill"></div>
+                    </div>
+                    <div style="text-align: center; margin-top: 20px;">
+                        <p style="color: #00d4ff; font-size: 20px; font-weight: bold;">✓ Data used: 5GB from B's plan</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <p style="font-size: 18px; margin-bottom: 10px;">© 2025 RemoteSIM. All rights reserved.</p>
+        <p style="opacity: 0.6;">Share data seamlessly across distances</p>
+       
+    </footer>
+
+    <script>
+        // Disable Right Click
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            showProtectionAlert('Right-click disabled!');
+            return false;
+        });
+
+        // Disable F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U, Ctrl+Shift+C
+        document.addEventListener('keydown', function(e) {
+            // F12
+            if (e.keyCode === 123) {
+                e.preventDefault();
+                showProtectionAlert('DevTools disabled!');
+                return false;
+            }
+            // Ctrl+Shift+I (Inspect)
+            if (e.ctrlKey && e.shiftKey && e.keyCode === 73) {
+                e.preventDefault();
+                showProtectionAlert('Inspect disabled!');
+                return false;
+            }
+            // Ctrl+Shift+J (Console)
+            if (e.ctrlKey && e.shiftKey && e.keyCode === 74) {
+                e.preventDefault();
+                showProtectionAlert('Console disabled!');
+                return false;
+            }
+            // Ctrl+U (View Source)
+            if (e.ctrlKey && e.keyCode === 85) {
+                e.preventDefault();
+                showProtectionAlert('View Source disabled!');
+                return false;
+            }
+            // Ctrl+Shift+C (Inspect Element)
+            if (e.ctrlKey && e.shiftKey && e.keyCode === 67) {
+                e.preventDefault();
+                showProtectionAlert('Inspect Element disabled!');
+                return false;
+            }
+            // Ctrl+S (Save Page)
+            if (e.ctrlKey && e.keyCode === 83) {
+                e.preventDefault();
+                showProtectionAlert('Save Page disabled!');
+                return false;
+            }
+        });
+
+        // Disable text selection
+        document.addEventListener('selectstart', function(e) {
+            e.preventDefault();
+            return false;
+        });
+
+        // Disable copy
+        document.addEventListener('copy', function(e) {
+            e.preventDefault();
+            showProtectionAlert('Copy disabled!');
+            return false;
+        });
+
+        // Disable cut
+        document.addEventListener('cut', function(e) {
+            e.preventDefault();
+            showProtectionAlert('Cut disabled!');
+            return false;
+        });
+
+        // Protection Alert Function
+        function showProtectionAlert(message) {
+            const alert = document.createElement('div');
+            alert.textContent = '🔒 ' + message;
+            alert.style.position = 'fixed';
+            alert.style.top = '20px';
+            alert.style.right = '20px';
+            alert.style.padding = '15px 30px';
+            alert.style.background = 'rgba(255, 0, 0, 0.9)';
+            alert.style.color = '#fff';
+            alert.style.borderRadius = '10px';
+            alert.style.fontWeight = 'bold';
+            alert.style.zIndex = '99999';
+            alert.style.boxShadow = '0 0 30px rgba(255, 0, 0, 0.6)';
+            alert.style.animation = 'shake 0.5s';
+            document.body.appendChild(alert);
+
+            setTimeout(() => {
+                alert.style.opacity = '0';
+                alert.style.transition = 'opacity 0.3s';
+                setTimeout(() => alert.remove(), 300);
+            }, 2000);
+        }
+
+        // Add shake animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                25% { transform: translateX(-10px); }
+                75% { transform: translateX(10px); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Detect DevTools
+        let devtoolsOpen = false;
+        const element = new Image();
+        Object.defineProperty(element, 'id', {
+            get: function() {
+                devtoolsOpen = true;
+                showProtectionAlert('DevTools detected!');
+            }
+        });
+        
+        setInterval(() => {
+            devtoolsOpen = false;
+            console.log(element);
+            console.clear();
+        }, 1000);
+
+        // Scroll Animation for Panels
+        const observerOptions = {
+            threshold: 0.3,
+            rootMargin: '0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.panel').forEach(panel => {
+            observer.observe(panel);
+        });
+
+        // Smooth Scroll
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+
+        // CTA Button Scroll
+        document.querySelector('.cta-button').addEventListener('click', () => {
+            document.querySelector('#how').scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+            });
+        });
+
+        // Data Selection Interactive
+        const dataOptions = document.querySelectorAll('.data-option');
+        const rangeSlider = document.getElementById('customRange');
+        const rangeValue = document.getElementById('rangeValue');
+        let selectedAmount = '5';
+
+        dataOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                dataOptions.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                selectedAmount = this.getAttribute('data-amount');
+                
+                // Animate selection
+                this.style.transform = 'scale(1.1)';
+                setTimeout(() => {
+                    this.style.transform = 'scale(1)';
+                }, 200);
+            });
+        });
+
+        // Range Slider
+        rangeSlider.addEventListener('input', function() {
+            rangeValue.textContent = this.value;
+            selectedAmount = this.value;
+            
+            // Deactivate preset buttons when using custom slider
+            dataOptions.forEach(btn => btn.classList.remove('active'));
+            
+            // Animate range value
+            rangeValue.style.transform = 'scale(1.2)';
+            setTimeout(() => {
+                rangeValue.style.transform = 'scale(1)';
+            }, 200);
+        });
+
+        // Request Button Animation
+        document.querySelector('.request-btn').addEventListener('click', function() {
+            const notification = document.querySelector('.notification');
+            const btn = this;
+            
+            // Animate button
+            btn.style.transform = 'scale(0.95)';
+            btn.textContent = 'Sending Request...';
+            
+            setTimeout(() => {
+                btn.style.transform = 'scale(1)';
+                
+                // Update notification
+                if (selectedAmount === 'unlimited') {
+                    notification.innerHTML = `
+                        <p style="font-size: 18px; margin-bottom: 10px;">📱 Requesting Data</p>
+                        <p style="color: #00d4ff; font-size: 24px; font-weight: bold;">∞ Unlimited from User B</p>
+                    `;
+                } else {
+                    notification.innerHTML = `
+                        <p style="font-size: 18px; margin-bottom: 10px;">📱 Requesting Data</p>
+                        <p style="color: #00d4ff; font-size: 24px; font-weight: bold;">${selectedAmount}GB from User B</p>
+                    `;
+                }
+                
+                btn.textContent = '✓ Request Sent!';
+                btn.style.background = 'linear-gradient(135deg, #22c55e, #16a34a)';
+                
+                // Create success particles
+                for (let i = 0; i < 20; i++) {
+                    createSuccessParticle(btn);
+                }
+            }, 800);
+        });
+
+        // Success Particles
+        function createSuccessParticle(element) {
+            const particle = document.createElement('div');
+            particle.style.position = 'absolute';
+            particle.style.width = '8px';
+            particle.style.height = '8px';
+            particle.style.background = '#00d4ff';
+            particle.style.borderRadius = '50%';
+            particle.style.pointerEvents = 'none';
+            particle.style.boxShadow = '0 0 10px rgba(0, 212, 255, 1)';
+            
+            const rect = element.getBoundingClientRect();
+            particle.style.left = rect.left + rect.width / 2 + 'px';
+            particle.style.top = rect.top + rect.height / 2 + 'px';
+            particle.style.zIndex = '9999';
+            
+            document.body.appendChild(particle);
+
+            const angle = Math.random() * Math.PI * 2;
+            const distance = 50 + Math.random() * 50;
+            const duration = 800 + Math.random() * 400;
+
+            const animation = particle.animate([
+                { 
+                    transform: 'translate(0, 0) scale(1)', 
+                    opacity: 1 
+                },
+                { 
+                    transform: `translate(${Math.cos(angle) * distance}px, ${Math.sin(angle) * distance}px) scale(0)`, 
+                    opacity: 0 
+                }
+            ], {
+                duration: duration,
+                easing: 'cubic-bezier(0.4, 0, 0.2, 1)'
+            });
+
+            animation.onfinish = () => particle.remove();
+        }
+
+        // Dynamic Background Particles
+        function createParticle() {
+            const particle = document.createElement('div');
+            particle.style.position = 'fixed';
+            particle.style.width = '2px';
+            particle.style.height = '2px';
+            particle.style.background = '#00d4ff';
+            particle.style.borderRadius = '50%';
+            particle.style.pointerEvents = 'none';
+            particle.style.left = Math.random() * window.innerWidth + 'px';
+            particle.style.top = '-10px';
+            particle.style.opacity = Math.random();
+            particle.style.boxShadow = '0 0 10px rgba(0, 212, 255, 0.8)';
+            document.body.appendChild(particle);
+
+            const duration = 5000 + Math.random() * 5000;
+            const animation = particle.animate([
+                { transform: 'translateY(0) translateX(0)', opacity: particle.style.opacity },
+                { transform: `translateY(${window.innerHeight}px) translateX(${(Math.random() - 0.5) * 200}px)`, opacity: 0 }
+            ], {
+                duration: duration,
+                easing: 'linear'
+            });
+
+            animation.onfinish = () => particle.remove();
+        }
+
+        setInterval(createParticle, 300);
+    </script>
+</body>
+</html>
