@@ -1,3 +1,5 @@
+#massive idea for data sharing and internet 
+
 🚀 3D SIM Data Sharing Concept Web App
 Futuristic Peer-to-Peer Remote SIM Data Transfer (500km+)
 
